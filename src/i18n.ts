@@ -1,4 +1,4 @@
-import * as obsidian from "obsidian";
+import { getLanguage } from "obsidian";
 
 const en = {
   cmdNew: "New meeting note",
@@ -438,13 +438,7 @@ const zhTW: Strings = {
 const LOCALES: Record<string, Strings> = { en, de, fr, es, it, pt, nl, pl, ru, uk, tr, ja, ko, zh, "zh-tw": zhTW };
 
 function currentLanguage(): string {
-  try {
-    // getLanguage() exists since Obsidian 1.8.7; older versions keep the choice in localStorage.
-    const fn = (obsidian as { getLanguage?: () => string }).getLanguage;
-    return (fn ? fn() : window.localStorage.getItem("language")) || "en";
-  } catch {
-    return "en";
-  }
+  return getLanguage() || "en";
 }
 
 export function pickLocale(lang: string): Strings {

@@ -1,8 +1,8 @@
 {
   "id": "meeting-notes-everywhere",
   "name": "Meeting Notes Everywhere",
-  "version": "0.1.0",
-  "minAppVersion": "1.4.10",
+  "version": "0.1.1",
+  "minAppVersion": "1.8.7",
   "description": "Create a meeting note and pick which of your meeting folders it goes into.",
   "author": "Sebastian Rauh",
   "authorUrl": "https://github.com/hornhaut",

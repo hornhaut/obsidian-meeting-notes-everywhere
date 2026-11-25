@@ -1,6 +1,6 @@
 {
   "name": "meeting-notes-everywhere",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "private": true,
   "description": "Obsidian plugin: create a meeting note and choose the meeting folder it goes into.",
   "main": "main.js",

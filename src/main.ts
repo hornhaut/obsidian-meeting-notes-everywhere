@@ -8,6 +8,7 @@ import {
   Plugin,
   PluginSettingTab,
   Setting,
+  SettingDefinitionItem,
   TAbstractFile,
   TFile,
   TFolder,
@@ -380,10 +381,61 @@ class MarkdownFileSuggest extends AbstractInputSuggest<TFile> {
 
 // ---------- settings ----------
 
+type SettingKey = "folderName" | "fileNameTemplate" | "templatePath" | "openInNewTab";
+
 class MeetingSettingTab extends PluginSettingTab {
   constructor(app: App, private plugin: MeetingNotesPlugin) {
     super(app, plugin);
   }
+
+  // ----- Obsidian 1.13+: declarative settings (also indexed by the settings search) -----
+
+  getSettingDefinitions(): SettingDefinitionItem<SettingKey>[] {
+    return [
+      {
+        name: t("setFolderName"),
+        desc: t("setFolderNameDesc"),
+        control: { type: "text", key: "folderName", placeholder: DEFAULT_SETTINGS.folderName },
+      },
+      {
+        name: t("setFileName"),
+        desc: this.placeholderHelp(),
+        // Rendered imperatively so the example updates while typing.
+        render: (setting) => this.fileNameControl(setting),
+      },
+      {
+        name: t("setTemplate"),
+        desc: t("setTemplateDesc"),
+        control: {
+          type: "file",
+          key: "templatePath",
+          placeholder: "templates/meeting.md",
+          filter: (f) => f.extension === "md",
+        },
+      },
+      {
+        name: t("setNewTab"),
+        control: { type: "toggle", key: "openInNewTab" },
+      },
+    ];
+  }
+
+  getControlValue(key: string): unknown {
+    return this.plugin.settings[key as SettingKey];
+  }
+
+  async setControlValue(key: string, value: unknown) {
+    const s = this.plugin.settings;
+    const str = typeof value === "string" ? value.trim() : "";
+    if (key === "openInNewTab") s.openInNewTab = value === true;
+    else if (key === "folderName") s.folderName = str || DEFAULT_SETTINGS.folderName;
+    else if (key === "fileNameTemplate")
+      s.fileNameTemplate = str || DEFAULT_SETTINGS.fileNameTemplate;
+    else if (key === "templatePath") s.templatePath = str;
+    await this.plugin.saveSettings();
+  }
+
+  // ----- Obsidian < 1.13: imperative fallback -----
 
   display() {
     const { containerEl } = this;
@@ -393,63 +445,60 @@ class MeetingSettingTab extends PluginSettingTab {
     new Setting(containerEl)
       .setName(t("setFolderName"))
       .setDesc(t("setFolderNameDesc"))
-      .addText((t) =>
-        t
+      .addText((text) =>
+        text
           .setPlaceholder(DEFAULT_SETTINGS.folderName)
           .setValue(s.folderName)
-          .onChange(async (v) => {
-            s.folderName = v.trim() || DEFAULT_SETTINGS.folderName;
-            await this.plugin.saveSettings();
-          })
+          .onChange((v) => this.setControlValue("folderName", v))
       );
 
-    const nameSetting = new Setting(containerEl)
-      .setName(t("setFileName"))
-      .addText((t) =>
-        t
-          .setPlaceholder(DEFAULT_SETTINGS.fileNameTemplate)
-          .setValue(s.fileNameTemplate)
-          .onChange(async (v) => {
-            s.fileNameTemplate = v.trim() || DEFAULT_SETTINGS.fileNameTemplate;
-            await this.plugin.saveSettings();
-            renderNameDesc();
-          })
-      );
-    const renderNameDesc = () => {
-      const frag = createFragment((f) => {
-        f.appendText(t("placeholders") + " {{title}}, {{date}}, {{date:DD.MM.YYYY}}, {{time}}, {{time:HH-mm}}, {{parent}}, {{folder}}.");
-        f.createEl("br");
-        // Preview with a real meeting folder from the vault, if there is one.
-        const sample = this.plugin.meetingFolders()[0];
-        const ctx = sample
-          ? this.plugin.contextFor(sample, t("exampleTitle"))
-          : { now: now(), vars: { title: t("exampleTitle"), folder: "", parent: "" } };
-        const example = toFileName(render(s.fileNameTemplate, ctx));
-        f.appendText(`${t("example")} ${example}.md`);
-      });
-      nameSetting.setDesc(frag);
-    };
-    renderNameDesc();
+    this.fileNameControl(new Setting(containerEl).setName(t("setFileName")).setDesc(this.placeholderHelp()));
 
     new Setting(containerEl)
       .setName(t("setTemplate"))
       .setDesc(t("setTemplateDesc"))
       .addSearch((search) => {
-        const save = async (v: string) => {
-          s.templatePath = v.trim();
-          await this.plugin.saveSettings();
-        };
-        search.setPlaceholder("templates/meeting.md").setValue(s.templatePath).onChange(save);
-        new MarkdownFileSuggest(this.app, search.inputEl, (path) => void save(path));
+        search
+          .setPlaceholder("templates/meeting.md")
+          .setValue(s.templatePath)
+          .onChange((v) => this.setControlValue("templatePath", v));
+        new MarkdownFileSuggest(this.app, search.inputEl, (path) => void this.setControlValue("templatePath", path));
       });
 
     new Setting(containerEl)
       .setName(t("setNewTab"))
-      .addToggle((t) =>
-        t.setValue(s.openInNewTab).onChange(async (v) => {
-          s.openInNewTab = v;
-          await this.plugin.saveSettings();
-        })
+      .addToggle((toggle) =>
+        toggle.setValue(s.openInNewTab).onChange((v) => this.setControlValue("openInNewTab", v))
       );
+  }
+
+  // ----- shared -----
+
+  private fileNameControl(setting: Setting) {
+    const example = setting.descEl.createDiv({ cls: "mne-preview" });
+    const update = () => (example.textContent = `${t("example")} ${this.exampleFileName()}.md`);
+    update();
+    setting.addText((text) =>
+      text
+        .setPlaceholder(DEFAULT_SETTINGS.fileNameTemplate)
+        .setValue(this.plugin.settings.fileNameTemplate)
+        .onChange(async (v) => {
+          await this.setControlValue("fileNameTemplate", v);
+          update();
+        })
+    );
+  }
+
+  private placeholderHelp(): string {
+    return `${t("placeholders")} {{title}}, {{date}}, {{date:DD.MM.YYYY}}, {{time}}, {{time:HH-mm}}, {{parent}}, {{folder}}.`;
+  }
+
+  private exampleFileName(): string {
+    // Preview with a real meeting folder from the vault, if there is one.
+    const sample = this.plugin.meetingFolders()[0];
+    const ctx = sample
+      ? this.plugin.contextFor(sample, t("exampleTitle"))
+      : { now: now(), vars: { title: t("exampleTitle"), folder: "", parent: "" } };
+    return toFileName(render(this.plugin.settings.fileNameTemplate, ctx));
   }
 }
