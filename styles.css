@@ -1,0 +1,18 @@
+.mne-suggestion-path {
+  font-size: var(--font-ui-smaller);
+  color: var(--text-muted);
+}
+
+.mne-suggestion-new {
+  color: var(--text-accent);
+}
+
+.mne-title-input {
+  width: 100%;
+}
+
+.mne-preview {
+  margin-top: 0.5em;
+  font-size: var(--font-ui-smaller);
+  color: var(--text-muted);
+}

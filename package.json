@@ -1,0 +1,23 @@
+{
+  "name": "meeting-notes-everywhere",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Obsidian plugin: create a meeting note and choose the meeting folder it goes into.",
+  "main": "main.js",
+  "scripts": {
+    "dev": "node esbuild.config.mjs",
+    "build": "tsc --noEmit && node esbuild.config.mjs production",
+    "deploy": "npm run build && node deploy.mjs",
+    "lint": "eslint ."
+  },
+  "devDependencies": {
+    "@eslint/js": "^10.0.1",
+    "@types/node": "^26.6.10",
+    "esbuild": "^0.28.2",
+    "eslint": "^10.15.0",
+    "eslint-plugin-obsidianmd": "^0.6.0",
+    "obsidian": "^1.14.4",
+    "typescript": "~5.9",
+    "typescript-eslint": "^8.74.0"
+  }
+}
