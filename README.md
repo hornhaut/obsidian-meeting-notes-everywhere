@@ -2,7 +2,7 @@
 
 Create a meeting note and pick which of your meeting folders it goes into.
 
-![Meeting Notes Everywhere demo: run the command, pick a project's meetings folder, type a title, and the note is created there](docs/demo.gif)
+![Meeting Notes Everywhere demo: run the command, pick a project's meetings folder, type a title, and the note is created there](https://raw.githubusercontent.com/hornhaut/obsidian-meeting-notes-everywhere/main/docs/demo.gif)
 
 If you keep a `meetings` folder in every project (the same way you might keep an attachments folder next to your notes), this plugin finds all of them for you. Run one command, choose the folder from a list, type a title, done.
 
